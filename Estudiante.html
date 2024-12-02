@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Estudiantes</title>
+
+    <!-- Estilo Bootstrap para diseño responsive -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- DataTables para funcionalidades de tablas avanzadas -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+    <!-- SweetAlert2 para alertas personalizadas -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Estilo personalizado para la barra de navegación -->
+    <style>
+        .navbar-custom {
+            background-color: black;
+            padding: 10px;
+        }
+        .navbar-custom a {
+            color: white !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Barra de navegación -->
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <a class="navbar-brand" href="#">Mi Aplicación</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <!-- Enlaces de navegación -->
+                <li class="nav-item">
+                    <a class="nav-link" href="/SistemaMatricula_Isaac/vista/Curso.html">Cursos</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" disable><strong>Estudiantes</strong></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/SistemaMatricula_Isaac/vista/Matricula.html">Matricula</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <!-- Título principal -->
+        <h1 class="display-4 text-center text-dark">Gestión de Estudiantes</h1>
+
+        <!-- Formulario para agregar estudiantes -->
+        <div class="card p-4">
+            <div class="row">
+                <!-- Campos de entrada para los datos del estudiante -->
+                <div class="col-md-4">
+                    <label for="cedula_estudiante" class="form-label">Cédula:</label>
+                    <input class="form-control" type="text" id="cedula_estudiante" name="cedula">
+                </div>
+                <div class="col-md-4">
+                    <label for="nombre_estudiante" class="form-label">Nombre:</label>
+                    <input class="form-control" type="text" id="nombre_estudiante" name="nombre">
+                </div>
+                <div class="col-md-4">
+                    <label for="apellido_estudiante" class="form-label">Apellido:</label>
+                    <input class="form-control" type="text" id="apellido_estudiante" name="apellido">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <!-- Campo de solo lectura para mostrar el ID del estudiante -->
+                    <input class="form-control" type="text" id="id_estudiante" placeholder="Código" name="id" readonly style="width:150px;">
+                </div>
+            </div>
+
+            <!-- Botones de acción -->
+            <div class="row mt-3">
+                <div class="col">
+                    <button type="button" class="btn btn-primary w-100" id="Agregar" onclick="agregar()">Agregar</button>
+                </div>
+                <div class="col">
+                    <button type="button" class="btn btn-secondary w-100" id="Listar" onclick="listar()">Listar</button>
+                </div>
+                <div class="col">
+                    <button type="button" class="btn btn-warning w-100" id="Editar" onclick="editar()" disabled>Editar</button>
+                </div>
+                <div class="col">
+                    <button type="button" class="btn btn-danger w-100" id="Eliminar" onclick="eliminar()" disabled>Eliminar</button>
+                </div>
+                <div class="col">
+                    <button type="button" class="btn btn-light w-100" id="Limpiar" onclick="limpiar()">Limpiar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de listado de estudiantes -->
+        <div class="card mt-4" id="listadoregistros" style="display: none;">
+            <div class="table-responsive">
+                <table id="tbllistado" class="table table-striped table-bordered table-hover">
+                    <thead style="background-color: #3d5866; color: white;">
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Cédula</th>
+                            <th scope="col">Nombre</th>
+                            <th scope="col">Apellido</th>
+                            <th scope="col">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts de JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+
+    <script>
+        listar();
+
+        // Habilita los botones de edición y eliminación
+        function habilitar_botones() {
+            document.getElementById("Agregar").disabled = true;
+            document.getElementById("Eliminar").disabled = false;
+            document.getElementById("Editar").disabled = false;
+        }
+
+        // Deshabilita los botones de edición y eliminación
+        function desabilitar_botones() {
+            document.getElementById("Agregar").disabled = false;
+            document.getElementById("Eliminar").disabled = true;
+            document.getElementById("Editar").disabled = true;
+        }
+
+        // Lista los estudiantes utilizando DataTables
+        function listar() {
+            document.getElementById("listadoregistros").style.display = "block";
+            $('#tbllistado').dataTable({
+                "aProcessing": true,
+                "aServerSide": true,
+                "ajax": {
+                    url: "../Controlador/Estudiante.php?op=listar",
+                    type: "get",
+                    dataType: "json",
+                    error: function (e) {
+                        console.log(e.responseText);
+                    }
+                },
+                "bDestroy": true,
+                "iDisplayLength": 5,
+                "order": [[0, "asc"]]
+            }).DataTable();
+        }
+
+        // Agrega un nuevo estudiante
+        function agregar() {
+            var cedula_estudiante = $("#cedula_estudiante").val();
+            var nombre_estudiante = $("#nombre_estudiante").val();
+            var apellido_estudiante = $("#apellido_estudiante").val();
+            if (cedula_estudiante == '' || nombre_estudiante == '' || apellido_estudiante == '') {
+                Swal.fire('Faltan Datos');
+            } else {
+                $.ajax({
+                    type: "POST",
+                    url: "../Controlador/Estudiante.php?op=guardar",
+                    data: { cedula_estudiante: cedula_estudiante, nombre_estudiante: nombre_estudiante, apellido_estudiante: apellido_estudiante },
+                    success: function (response) {
+                        Swal.fire(response);
+                        limpiar();
+                        listar();
+                    }
+                });
+            }
+        }
+
+        // Edita un estudiante existente
+        function editar() {
+            var id_estudiante = $("#id_estudiante").val();
+            var cedula_estudiante = $("#cedula_estudiante").val();
+            var nombre_estudiante = $("#nombre_estudiante").val();
+            var apellido_estudiante = $("#apellido_estudiante").val();
+            if (id_estudiante == '' || cedula_estudiante == '' || nombre_estudiante == '' || apellido_estudiante == '') {
+                Swal.fire('Faltan Datos');
+            } else {
+                $.ajax({
+                    type: "POST",
+                    url: "../Controlador/Estudiante.php?op=editar",
+                    data: { id_estudiante: id_estudiante, cedula_estudiante: cedula_estudiante, nombre_estudiante: nombre_estudiante, apellido_estudiante: apellido_estudiante },
+                    success: function (response) {
+                        Swal.fire(response);
+                        limpiar();
+                        listar();
+                    }
+                });
+            }
+        }
+
+        // Limpia los campos del formulario
+        function limpiar() {
+            $("#id_estudiante").val("");
+            $("#cedula_estudiante").val("");
+            $("#nombre_estudiante").val("");
+            $("#apellido_estudiante").val("");
+            desabilitar_botones();
+        }
+
+        // Muestra la información de un estudiante en el formulario
+        function mostrar(id_estudiante) {
+            $.ajax({
+                type: "POST",
+                url: "../Controlador/Estudiante.php?op=mostrar",
+                data: { id_estudiante: id_estudiante },
+                success: function (response) {
+                    var data = JSON.parse(response);
+                    $("#id_estudiante").val(data.id_estudiante);
+                    $("#cedula_estudiante").val(data.cedula);
+                    $("#nombre_estudiante").val(data.nombre);
+                    $("#apellido_estudiante").val(data.apellido);
+                    habilitar_botones();
+                }
+            });
+        }
+
+        // Elimina un estudiante seleccionado
+        function eliminar() {
+            var id_estudiante = $("#id_estudiante").val();
+            Swal.fire({
+                title: '¿Estás seguro de eliminar este estudiante?',
+                showDenyButton: true,
+                confirmButtonText: 'Sí',
+                denyButtonText: 'No',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        type: "POST",
+                        url: "../Controlador/Estudiante.php?op=eliminar",
+                        data: { id_estudiante: id_estudiante },
+                        success: function (response) {
+                            Swal.fire('Eliminado', response, 'success');
+                            limpiar();
+                            listar();
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>
